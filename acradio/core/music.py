@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import json
 from pathlib import Path
 from typing import TypedDict, NotRequired
@@ -39,19 +39,17 @@ def load_tracks() -> dict[str, Requirements]:
 tracks = load_tracks()
 
 def choose_track(state: State) -> Path:
-    possible_tracks: dict[str, Requirements] = {}
+    state_dict = asdict(state)
 
     # Filter to only tracks that match our state
-    for track, req in tracks.items():
-        for requirement, value in req.items():
-            if requirement == "time" or requirement == "priority":
-                pass
-            else:
-                if getattr(state, requirement) == value:
-                    possible_tracks[track] = req
+    possible_tracks: dict[str, Requirements] = {
+        track: req
+        for track, req in tracks.items()
+        if any((state_dict.get(r, None) == v for r,v in req.items() if (r != 'time' or r != 'priority')))
+    }
 
     # Cull times too late (lteq)
-    possible_tracks = {t: r for t, r in possible_tracks.items() if r.get("time", 2500) <= state.time}
+    possible_tracks = {t: r for t, r in possible_tracks.items() if r.get("time", 0) <= state.time}
 
     # Sort by time and priority
     possible_tracks = {k: v for k, v in sorted(possible_tracks.items(), key=lambda item: (item[1]["time"], item[1]["priority"]))}
