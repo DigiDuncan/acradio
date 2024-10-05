@@ -1,6 +1,9 @@
 import json
-from arcade import Text, color
+
 import arrow
+
+from arcade import Sound, Text, color
+from pyglet.media import Player, Source
 
 from acradio.core.music import State, choose_track
 from acradio.core.weather import get_weather
@@ -28,6 +31,11 @@ class RootView(View):
 
         self.current_track = None
 
+        self.player: Sound = None
+        self.get_ready_to_die = False
+        self.got_ready_to_die_time = 0
+        self.volume = 0.20
+
         self.debug_text = Text("[NOT UPDATED]", x = 5, y = self.window.height - 5, anchor_y = "top",
                               font_name = "GohuFont 11 Nerd Font Mono", font_size = 11,
                               color = color.WHITE,
@@ -37,7 +45,24 @@ class RootView(View):
         self.setup()
 
     def update_track(self) -> None:
+        _current_track = self.current_track
         self.current_track = choose_track(self.state)
+
+        if self.player is None:
+            self.player = Sound(self.current_track)
+            self.player.play(volume = self.volume, loop = True)
+            return
+
+        if _current_track != self.current_track:
+            self.get_ready_to_die = True
+            self.got_ready_to_die_time = self.player.get_stream_position()
+
+        if self.get_ready_to_die and self.player.get_stream_position() > self.got_ready_to_die_time:
+            self.player.stop()
+
+        if self.player.is_playing is False:
+            self.player = Sound(self.current_track)
+            self.player.play(volume = self.volume, loop = True)
 
     def get_weather(self) -> None:
         weather = get_weather(self.location)
@@ -58,6 +83,8 @@ class RootView(View):
         self.get_time()
         self.get_weather()
 
+        self.update_track()
+
     def on_update(self, delta_time: float) -> bool | None:
         self.local_time += delta_time
 
@@ -71,7 +98,7 @@ class RootView(View):
         self.update_debug_text()
 
     def update_debug_text(self) -> None:
-        self.debug_text.text = f"{self.state.month}/{self.state.day} {self.state.hour}:{self.state.minute}\nLocation: {self.location}\nWeather: {self.state.weather}\n\nLocal Time: {self.local_time}\nLast Time Update: {self.last_time_refresh}\nLast Weather Update: {self.last_weather_refresh}\n\nCurrent Track: {self.current_track}"
+        self.debug_text.text = f"{self.state.month}/{self.state.day} {self.state.hour}:{self.state.minute}\nLocation: {self.location}\nWeather: {self.state.weather}\n\nLocal Time: {self.local_time}\nLast Time Update: {self.last_time_refresh}\nLast Weather Update: {self.last_weather_refresh}\n\nCurrent Track: {self.current_track}\nVolume: {self.volume:.0%}"
 
     def on_draw(self) -> None:
         self.clear()
