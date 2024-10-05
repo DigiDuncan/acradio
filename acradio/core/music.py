@@ -45,7 +45,7 @@ def choose_track(state: State) -> Path:
     possible_tracks: dict[str, Requirements] = {
         track: req
         for track, req in tracks.items()
-        if any((state_dict.get(r, None) == v for r,v in req.items() if (r != 'time' or r != 'priority')))
+        if all((state_dict[r] == v for r,v in req.items() if not (r == 'time' or r == 'priority')))
     }
 
     # Cull times too late (lteq)
