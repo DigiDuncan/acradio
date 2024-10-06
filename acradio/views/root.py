@@ -9,6 +9,7 @@ from pyglet.media import Player
 from acradio.core.music import State, choose_track
 from acradio.core.weather import get_weather
 from acradio.lib.application import View
+from acradio.lib.fader import Fader
 from acradio.lib.paths import settings_path
 from acradio.lib.utils import clamp, map_range
 
@@ -42,9 +43,7 @@ class RootView(View):
         self.volume = 0.20
         self.debug = False
 
-        self.last_time_volume_changed = -999
-        self.volume_text_hold_time = 1
-        self.volume_text_fade_time = 1
+        self.volume_fader = Fader[float](0, 255, 0, 1, 1, int)
 
         self.debug_text = Text("[NOT UPDATED]", x = 5, y = self.window.height - 5, anchor_y = "top",
                               font_name = "GohuFont 11 Nerd Font Mono", font_size = 11,
@@ -122,6 +121,7 @@ class RootView(View):
 
     def on_update(self, delta_time: float) -> bool | None:
         self.local_time += delta_time
+        self.volume_fader.update(delta_time)
 
         if self.local_time >= self.last_time_refresh + self.time_refresh_interval:
             self.get_time()
@@ -151,13 +151,13 @@ class RootView(View):
             self.volume = max(self.volume, 0)
             self.volume_text.text = f"Volume {self.volume * 2:.0%}"
             self.player.volume = self.volume
-            self.last_time_volume_changed = self.local_time
+            self.volume_fader.activate(self.local_time)
         elif symbol == arcade.key.EQUAL:
             self.volume += 0.05
             self.volume = min(self.volume, 1)
             self.volume_text.text = f"Volume {self.volume * 2:.0%}"
             self.player.volume = self.volume
-            self.last_time_volume_changed = self.local_time
+            self.volume_fader.activate(self.local_time)
 
     def update_debug_text(self) -> None:
         self.debug_text.text = f"{self.state.month}/{self.state.day} {self.state.hour}:{self.state.minute}\nLocation: {self.location}\nWeather: {self.state.weather}\n\nLocal Time: {self.local_time}\nLast Time Update: {self.last_time_refresh}\nLast Weather Update: {self.last_weather_refresh}\n\nCurrent Track: {self.current_track}\nVolume: {self.volume:.0%}"
@@ -168,11 +168,7 @@ class RootView(View):
         self.date_text.draw()
         self.weather_text.draw()
 
-        volume_alpha = 255 if self.local_time < self.last_time_volume_changed + self.volume_text_hold_time else clamp(0, int(map_range(self.local_time,
-                                                                                                                          self.last_time_volume_changed + self.volume_text_hold_time,
-                                                                                                                          self.last_time_volume_changed + self.volume_text_hold_time + self.volume_text_fade_time,
-                                                                                                                          255,
-                                                                                                                          0)), 255)
+        volume_alpha = self.volume_fader.value
         self.volume_text.color = self.volume_text.color.replace(a = volume_alpha)
         if volume_alpha > 0:
             self.volume_text.draw()
