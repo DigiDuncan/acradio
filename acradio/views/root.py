@@ -4,14 +4,16 @@ import arcade
 import arrow
 
 from arcade import Sound, Text, color
+from arcade.types import Color
 from pyglet.media import Player
 
+from acradio.core.background import GradientRect, gradients
 from acradio.core.music import State, choose_track
 from acradio.core.weather import get_weather
 from acradio.lib.application import View
 from acradio.lib.fader import Fader
+from acradio.lib.draw_grad_rect import draw_rect_gradient
 from acradio.lib.paths import settings_path
-from acradio.lib.utils import clamp, map_range
 
 day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
@@ -43,7 +45,9 @@ class RootView(View):
         self.volume = 0.20
         self.debug = False
 
-        self.volume_fader = Fader[float](0, 255, 0, 1, 1, int)
+        self.volume_fader = Fader(0, 255, 0, 1, 1, int)
+
+        self.background = GradientRect(self.window.rect, gradients[0])
 
         self.debug_text = Text("[NOT UPDATED]", x = 5, y = self.window.height - 5, anchor_y = "top",
                               font_name = "GohuFont 11 Nerd Font Mono", font_size = 11,
@@ -110,6 +114,7 @@ class RootView(View):
         self.state = State(month, day, hour, minute, self.state.weather)
         self.time_text.text = f"{hour:02}:{minute:02}"
         self.date_text.text = f"{day_name} {month}/{day:02}"
+        self.background = GradientRect(self.window.rect, gradients[hour])
         self.last_time_refresh = self.local_time
 
     def setup(self) -> None:
@@ -164,6 +169,9 @@ class RootView(View):
 
     def on_draw(self) -> None:
         self.clear()
+
+        self.background.draw()
+
         self.time_text.draw()
         self.date_text.draw()
         self.weather_text.draw()

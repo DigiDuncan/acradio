@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from acradio.lib.utils import HasAddSubMul, map_range
 
-class Fader[T: HasAddSubMul]:
-    def __init__(self, min_val: T, max_val: T, fade_in: float, hold: float, fade_out: float, wrap: Callable | False = False) -> None:
+class Fader:
+    def __init__(self, min_val, max_val, fade_in: float, hold: float, fade_out: float, wrap = False) -> None:
         self.min_val = min_val
         self.max_val = max_val
 
@@ -31,7 +31,7 @@ class Fader[T: HasAddSubMul]:
         return self.last_activation_time + self.fade_in + self.hold + self.fade_out
 
     @property
-    def value(self) -> T:
+    def value(self):
         if self.local_time < self.last_activation_time:
             v = self.min_val
         elif self.local_time < self.fade_in_end:
