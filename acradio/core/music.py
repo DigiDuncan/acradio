@@ -52,7 +52,7 @@ def choose_track(state: State) -> Path:
     possible_tracks = {t: r for t, r in possible_tracks.items() if r.get("time", 0) <= state.time}
 
     # Sort by time and priority
-    possible_tracks = {k: v for k, v in sorted(possible_tracks.items(), key=lambda item: (item[1]["time"], item[1]["priority"]))}
+    possible_tracks = dict(sorted(possible_tracks.items(), key=lambda item: (item[1]["time"], item[1]["priority"])))
 
     if not possible_tracks:
         raise ValueError("No valid track found!")
