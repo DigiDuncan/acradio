@@ -98,6 +98,8 @@ def load_ogg(name: str, streaming: bool = False, sub_directories: tuple[str, ...
 # Font Methods
 get_font_path = make_path_finder(fonts, 'ttf')
 def load_font(name: str, sub_directories: tuple[str, ...] = ()) -> None: _load_font(get_font_path(name, sub_directories))
+get_font_path_otf = make_path_finder(fonts, 'otf')
+def load_otf_font(name: str, sub_directories: tuple[str, ...] = ()) -> None: _load_font(get_font_path_otf(name, sub_directories))
 
 # Data Methods
 read_json = make_string_opener(data, 'json')

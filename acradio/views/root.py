@@ -11,6 +11,8 @@ from acradio.core.weather import get_weather
 from acradio.lib.application import View
 from acradio.lib.paths import settings_path
 
+day_names = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
 
 class RootView(View):
 
@@ -35,13 +37,39 @@ class RootView(View):
         self.player: Player = None
         self.get_ready_to_die = False
         self.got_ready_to_die_time = 0
+
         self.volume = 0.20
+        self.debug = False
 
         self.debug_text = Text("[NOT UPDATED]", x = 5, y = self.window.height - 5, anchor_y = "top",
                               font_name = "GohuFont 11 Nerd Font Mono", font_size = 11,
                               color = color.WHITE,
                               width = self.window.width,
                               multiline = True)
+
+        self.time_text = Text("??:??", x = self.window.center_x, y = self.window.center_y,
+                              anchor_x = "center",
+                              align = "center",
+                              font_name = "FOT-Seurat Pro", font_size = 100,
+                              color = color.WHITE)
+
+        self.date_text = Text("Day MM/DD", x = self.time_text.right, y = self.time_text.bottom + 10,
+                              anchor_y = "top", anchor_x = "right",
+                              align = "right",
+                              font_name = "FOT-Seurat Pro", font_size = 24,
+                              color = color.WHITE)
+
+        self.weather_text = Text("Weather", x = self.time_text.left, y = self.time_text.bottom + 10,
+                              anchor_y = "top", anchor_x = "left",
+                              align = "left",
+                              font_name = "FOT-Seurat Pro", font_size = 24,
+                              color = color.WHITE)
+
+        self.volume_text = Text("Volume 40%", x = self.window.center_x, y = self.window.height - 10,
+                              anchor_y = "top", anchor_x = "center",
+                              align = "center",
+                              font_name = "FOT-Seurat Pro", font_size = 24,
+                              color = color.WHITE)
 
         self.setup()
 
@@ -65,6 +93,7 @@ class RootView(View):
     def get_weather(self) -> None:
         weather = get_weather(self.location)
         self.state = State(self.state.month, self.state.day, self.state.hour, self.state.minute, weather)
+        self.weather_text.text = weather.title()
         self.last_weather_refresh = self.local_time
 
     def get_time(self) -> None:
@@ -73,7 +102,10 @@ class RootView(View):
         day = now.day
         hour = now.hour
         minute = now.minute
+        day_name = day_names[now.weekday()]
         self.state = State(month, day, hour, minute, self.state.weather)
+        self.time_text.text = f"{hour:02}:{minute:02}"
+        self.date_text.text = f"{day_name} {month}/{day:02}"
         self.last_time_refresh = self.local_time
 
     def setup(self) -> None:
@@ -95,19 +127,29 @@ class RootView(View):
         self.update_track()
         self.update_debug_text()
 
+    def reset(self) -> None:
+        self.player.delete()
+        self.player = None
+        with open(settings_path) as fp:
+            settings = json.load(fp)
+        self.state = State(0, 0, 0, 0, "none")
+        self.location = settings["location"]
+        self.setup()
+
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         if symbol == arcade.key.R:
-            self.player.delete()
-            self.player = None
-            with open(settings_path) as fp:
-                settings = json.load(fp)
-            self.state = State(0, 0, 0, 0, "none")
-            self.location = settings["location"]
-            self.setup()
+            self.reset()
+        elif symbol == arcade.key.GRAVE:
+            self.debug = not self.debug
 
     def update_debug_text(self) -> None:
         self.debug_text.text = f"{self.state.month}/{self.state.day} {self.state.hour}:{self.state.minute}\nLocation: {self.location}\nWeather: {self.state.weather}\n\nLocal Time: {self.local_time}\nLast Time Update: {self.last_time_refresh}\nLast Weather Update: {self.last_weather_refresh}\n\nCurrent Track: {self.current_track}\nVolume: {self.volume:.0%}"
 
     def on_draw(self) -> None:
         self.clear()
-        self.debug_text.draw()
+        self.time_text.draw()
+        self.date_text.draw()
+        self.weather_text.draw()
+
+        if self.debug:
+            self.debug_text.draw()
