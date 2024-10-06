@@ -4,7 +4,7 @@ import arcade
 import arrow
 
 from arcade import Sound, Text, color
-from pyglet.media import Player, Source
+from pyglet.media import Player
 
 from acradio.core.music import State, choose_track
 from acradio.core.weather import get_weather
