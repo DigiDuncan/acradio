@@ -5,7 +5,7 @@ from arcade.types import Color
 
 from acradio.lib.draw_grad_rect import draw_rect_gradient
 
-
+# https://www.figma.com/community/file/967898387862224533
 gradients = {
     0: [(0.0, 0x020111), (0.85, 0x020111), (1.0, 0x191621)],
     1: [(0.0, 0x020111), (0.6, 0x020111), (1.0, 0x20202C)],
